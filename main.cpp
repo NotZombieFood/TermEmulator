@@ -17,7 +17,7 @@
 #include <algorithm>  //uses for deleting whitespaces
 #include <sys/stat.h>   //used for the isFolder function
 #include <dirent.h>  //for viewing inside folders, this may not be included in your compiler files More info on how to solve the issue: https://web.archive.org/web/20170428133315/http://www.softagalleria.net/dirent.php
-
+#include <direct.h>
 using namespace std;
 
 struct node {
@@ -348,6 +348,62 @@ void find(node * pointer, string filename) {
 	}
 }
 
+void orderArray(node * pointer) {
+	for (int i = 0; i < 16; i++)
+	{
+		if (pointer->childs[i] == NULL) {
+			int x;
+			for (x=i+1; x < 16; x++)
+			{
+				if (pointer->childs[x] != NULL) {
+					pointer->childs[i] = pointer->childs[x];
+					pointer->childs[x] = NULL;
+				}
+			}
+		}
+	}
+}
+
+void removeRecursive(node * pointer, int position, int simulation) {
+	int i = 0;
+	while (pointer->childs[i] != NULL) {
+		removeRecursive(pointer->childs[i], i, simulation);
+	}
+	pointer->father->childs[position] = NULL;
+	orderArray(pointer->father);
+	if (simulation == 48) {
+		if (pointer->isFolder) {
+			_rmdir(pointer->path);
+		}
+		else {
+			remove(pointer->path);
+		}
+	}
+	//free(pointer);
+}
+
+void remove(node * pointer, string filename, int simulation) {
+	/*
+	* @desc: remove a given directory or file
+	* @params: Pointer of current directory, string of the filename/foldername
+	* @note: free(temp);
+	* @retval: void
+	* @reference:
+	*/
+	int i = 0;
+	while (pointer->childs[i] != NULL) {
+		if (filename == pointer->childs[i]->name) {
+			removeRecursive(pointer->childs[i], i, simulation);
+		}
+		i++;
+		if (i == 16) {
+			cout << "The folder or file dont exists" << endl;
+			return;
+		}
+	}
+}
+
+
 int main() {
 	size_t requiredSize = 15;
 	char * lib_var;
@@ -426,6 +482,9 @@ int main() {
 		}
 		else if (input.find("find") != std::string::npos) {
 			find(current_folder, parse(4, input));
+		}
+		else if (input.find("rm") != std::string::npos) {
+			remove(current_folder, parse(2, input),simulation);
 		}
 		else {
 			cout << "Command was not recognized, please use command help for more instructions" << endl;
